@@ -1,3 +1,9 @@
+type jq > /dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "jq not found"
+    exit 1
+fi
+
 THING_NAME=$(date +%s | shasum | cut -c 1-8)
 POLICY_NAME=$THING_NAME
 ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | jq -r .endpointAddress)
