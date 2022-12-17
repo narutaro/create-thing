@@ -1,3 +1,9 @@
+type aws > /dev/null 2>&1
+if [ $? != 0 ]; then
+    echo "aws not found"
+    exit 1
+fi
+
 type jq > /dev/null 2>&1
 if [ $? != 0 ]; then
     echo "jq not found"
