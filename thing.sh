@@ -1,63 +1,54 @@
+#!/bin/bash
+
+# Check for aws command existence
 type aws > /dev/null 2>&1
 if [ $? != 0 ]; then
-    echo "aws not found"
-    exit 1
-fi
-
-type jq > /dev/null 2>&1
-if [ $? != 0 ]; then
-    echo "jq not found"
+    echo "aws command not found."
     exit 1
 fi
 
 THING_NAME=$(date +%s | shasum | cut -c 1-8)
 POLICY_NAME=$THING_NAME
-ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS | jq -r .endpointAddress)
+
+echo "Creating Thing and its associated certificates..."
+ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --output text --query 'endpointAddress')
 
 mkdir -p $THING_NAME && cd $THING_NAME
 
-aws iot create-thing --thing-name $THING_NAME
+# Create thing
+aws iot create-thing --thing-name $THING_NAME --output text --query 'thingName' > /dev/null
+echo "Created Thing: $THING_NAME"
 
-wget https://www.amazontrust.com/repository/AmazonRootCA1.pem
+# Download root certificate
+wget -q https://www.amazontrust.com/repository/AmazonRootCA1.pem
+echo "Downloaded root CA certificate."
 
-aws iot create-keys-and-certificate \
+# Create keys and certificates for the thing and save to the directory
+CERTIFICATE_ARN=$(aws iot create-keys-and-certificate \
     --set-as-active \
     --certificate-pem-outfile "./device.pem.crt" \
     --public-key-outfile "./public.pem.key" \
     --private-key-outfile "./private.pem.key" \
-    > certs-and-keys.json
+    --query "certificateArn" --output text)
 
-aws iot attach-thing-principal \
-    --thing-name $THING_NAME \
-    --principal $(jq -r .certificateArn certs-and-keys.json)
+echo "Created keys and certificates for the Thing."
 
-cat << EOS >> policy.json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "iot:Publish",
-                "iot:Subscribe",
-                "iot:Receive",
-                "iot:Connect"
-            ],
-            "Resource": [
-                "*"
-            ]
-        }
-    ]
-}
-EOS
+# Attach the thing to its principal
+aws iot attach-thing-principal --thing-name $THING_NAME --principal $CERTIFICATE_ARN
+echo "Attached Thing to its principal."
 
-aws iot create-policy \
-    --policy-name "$POLICY_NAME" \
-    --policy-document "file://policy.json"
+echo "Creating and attaching policy..."
+# Create policy
+aws iot create-policy --policy-name "$POLICY_NAME" --policy-document '{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Action": ["iot:Publish","iot:Subscribe","iot:Receive","iot:Connect"],"Resource": ["*"]}]}'> /dev/null
+echo "Created policy: $POLICY_NAME"
 
-aws iot attach-policy --policy-name "$POLICY_NAME" --target $(jq -r .certificateArn certs-and-keys.json)
+# Attach the policy
+aws iot attach-policy --policy-name "$POLICY_NAME" --target $CERTIFICATE_ARN
+echo "Attached policy to Thing."
 
-cat << EOS >> sub.sh
+echo "Generating MQTT scripts..."
+# Generate MQTT scripts
+cat << EOS > sub.sh
 mosquitto_sub --cafile AmazonRootCA1.pem \\
   --cert device.pem.crt \\
   --key private.pem.key \\
@@ -69,7 +60,7 @@ mosquitto_sub --cafile AmazonRootCA1.pem \\
   -d
 EOS
 
-cat << EOS >> pub.sh
+cat << EOS > pub.sh
 mosquitto_pub --cafile AmazonRootCA1.pem \\
   --cert device.pem.crt \\
   --key private.pem.key \\
@@ -81,5 +72,7 @@ mosquitto_pub --cafile AmazonRootCA1.pem \\
   -d
 EOS
 
-chmod +x ./pub.sh
-chmod +x ./sub.sh
+chmod +x ./pub.sh ./sub.sh
+echo "Generated MQTT publish and subscribe scripts."
+
+echo "Process completed!"
