@@ -31,7 +31,11 @@ CERTIFICATE_ARN=$(aws iot create-keys-and-certificate \
     --private-key-outfile "./private.pem.key" \
     --query "certificateArn" --output text)
 
+CERTIFICATE_ID=$(echo $CERTIFICATE_ARN | awk -F/ '{print $NF}')
+
 echo "Created keys and certificates for the Thing."
+echo "Certificate ID: $CERTIFICATE_ID"
+echo "Certificate ARN: $CERTIFICATE_ARN"
 
 # Attach the thing to its principal
 aws iot attach-thing-principal --thing-name $THING_NAME --principal $CERTIFICATE_ARN
