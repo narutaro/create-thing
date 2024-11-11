@@ -65,7 +65,7 @@ mosquitto_sub --cafile AmazonRootCA1.pem \\
 EOS
 
 cat << EOS > pub.sh
-TIME=$(date "+%Y-%m-%dT%H:%M:%S%z")
+TIME=\$(date "+%Y-%m-%dT%H:%M:%S%z")
 mosquitto_pub --cafile AmazonRootCA1.pem \\
   --cert device.pem.crt \\
   --key private.pem.key \\
