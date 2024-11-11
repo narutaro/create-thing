@@ -59,7 +59,7 @@ mosquitto_sub --cafile AmazonRootCA1.pem \\
   -h $ENDPOINT \\
   -p 8883 \\
   -t t1 \\
-  -i sub_$THING_NAME \\
+  -i s$THING_NAME \\
   -F '%j' \\
   -d
 EOS
@@ -72,7 +72,7 @@ mosquitto_pub --cafile AmazonRootCA1.pem \\
   -h $ENDPOINT \\
   -p 8883 \\
   -t t1 \\
-  -i pub_$THING_NAME \\
+  -i p$THING_NAME \\
   -m {\"time\":\"$TIME\"} \\
   -d
 EOS
