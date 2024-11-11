@@ -73,7 +73,7 @@ mosquitto_pub --cafile AmazonRootCA1.pem \\
   -p 8883 \\
   -t t1 \\
   -i p$THING_NAME \\
-  -m {\"time\":\"$TIME\"} \\
+  -m {\"time\":\"\$TIME\"} \\
   -d
 EOS
 
