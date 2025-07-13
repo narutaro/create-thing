@@ -7,6 +7,11 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
+# Default values for attributes
+TYPE=${1:-"device"}
+LOCATION=${2:-"factory1"}
+MODEL=${3:-"v1"}
+
 THING_NAME=$(date +%s | shasum | cut -c 1-8)
 POLICY_NAME=$THING_NAME
 
@@ -17,7 +22,7 @@ mkdir -p $THING_NAME && cd $THING_NAME
 
 # Create thing
 aws iot create-thing --thing-name $THING_NAME \
---attribute-payload '{"attributes": {"type": "device", "location": "tokyo", "model": "v1"}}' \
+--attribute-payload "{\"attributes\": {\"type\": \"$TYPE\", \"location\": \"$LOCATION\", \"model\": \"$MODEL\"}}" \
 --output text \
 --query 'thingName' > /dev/null
 echo "Created Thing: $THING_NAME"
