@@ -9,7 +9,7 @@ fi
 
 # Default values for attributes
 TYPE=${1:-"device"}
-LOCATION=${2:-"factory1"}
+LOCATION=${2:-"tokyo"}
 MODEL=${3:-"v1"}
 
 THING_NAME=$(date +%s | shasum | cut -c 1-8)
