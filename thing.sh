@@ -16,7 +16,10 @@ ENDPOINT=$(aws iot describe-endpoint --endpoint-type iot:Data-ATS --output text 
 mkdir -p $THING_NAME && cd $THING_NAME
 
 # Create thing
-aws iot create-thing --thing-name $THING_NAME --output text --query 'thingName' > /dev/null
+aws iot create-thing --thing-name $THING_NAME \
+--attribute-payload '{"attributes": {"type": "device", "location": "tokyo", "model": "v1"}}' \
+--output text \
+--query 'thingName' > /dev/null
 echo "Created Thing: $THING_NAME"
 
 # Download root certificate
